@@ -1,0 +1,11 @@
+apaarId,fullName,dateOfBirth,category,isSupernumerary,isNri,ociStatus,isForeignNational,institutionCode,program,academicYear
+210000000001,Aarav Sharma,2005-03-14,General,false,false,false,false,COL002,ECE,2026-27
+210000000002,Diya Verma,2005-07-21,OBC,false,false,false,false,COL002,ECE,2026-27
+210000000003,Kabir Singh,2004-11-02,SC,false,false,false,false,COL002,ECE,2026-27
+210000000004,Isha Gupta,2005-01-30,General,false,false,false,false,COL002,ECE,2026-27
+210000000005,Rohan Das,2005-09-09,General,false,false,false,false,COL002,ECE,2026-27
+210000000006,Sara Khan,2005-05-18,General,true,false,false,false,COL002,ECE,2026-27
+210000000007,Neha Roy,2004-12-25,OBC,false,true,false,false,COL002,ECE,2026-27
+99,Short Id Student,2005-02-11,General,false,false,false,false,COL002,ECE,2026-27
+,Missing Id Student,2005-06-06,General,false,false,false,false,COL002,ECE,2026-27
+210000000001,Repeat Id Student,2005-08-08,General,false,false,false,false,COL002,ECE,2026-27

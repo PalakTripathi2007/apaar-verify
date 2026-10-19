@@ -14,6 +14,7 @@ app.get("/health", (req, res) => {
 app.use("/api/students", require("./routes/students"));
 app.use("/api/validation", require("./routes/validation"));
    app.use("/api/programs", require("./routes/programs"));
+app.use("/api/upload", require("./routes/upload"));
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
