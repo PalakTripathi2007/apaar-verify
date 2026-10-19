@@ -62,4 +62,49 @@ function findDuplicates(students) {
   return results;
 }
 
-module.exports = { checkApaarFormat, findDuplicates };
+// Rule 3: admissions approved intake se zyada hain
+function checkIntake(students, programs) {
+  const counts = {};
+
+  students.forEach((s) => {
+    if (s.isSupernumerary) return; // extra seats ginti mein nahi
+    const key = `${s.institutionCode}|${s.program}|${s.academicYear}`;
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  const results = [];
+
+  for (const key in counts) {
+    const [institutionCode, program, academicYear] = key.split("|");
+
+    const approved = programs.find(
+      (p) =>
+        p.institutionCode === institutionCode &&
+        p.program === program &&
+        p.academicYear === academicYear
+    );
+
+    if (!approved) {
+      results.push({
+        institutionCode,
+        flagType: "MISSING_APPROVED_INTAKE",
+        reason: `No approved intake found for ${institutionCode} ${program} ${academicYear}`,
+        severity: "low",
+      });
+      continue;
+    }
+
+    if (counts[key] > approved.approvedIntake) {
+      results.push({
+        institutionCode,
+        flagType: "EXCEEDS_APPROVED_INTAKE",
+        reason: `${institutionCode} ${program} ${academicYear}: ${counts[key]} admitted, approved intake is ${approved.approvedIntake} (excess ${counts[key] - approved.approvedIntake})`,
+        severity: "high",
+      });
+    }
+  }
+
+  return results;
+}
+
+module.exports = { checkApaarFormat, findDuplicates, checkIntake };

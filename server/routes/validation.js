@@ -1,7 +1,12 @@
 const express = require("express");
 const Student = require("../models/Student");
 const Flag = require("../models/Flag");
-const { checkApaarFormat, findDuplicates } = require("../validation/rules");
+const Program = require("../models/Program");
+const {
+  checkApaarFormat,
+  findDuplicates,
+  checkIntake,
+} = require("../validation/rules");
 
 const router = express.Router();
 
@@ -9,10 +14,12 @@ const router = express.Router();
 router.post("/run", async (req, res) => {
   try {
     const students = await Student.find();
-    await Flag.deleteMany({}); // purane flags hatao, taaki baar-baar chalane par repeat na ho
+    const programs = await Program.find();
+    await Flag.deleteMany({}); // purane flags hatao
 
     const flags = [];
 
+    // Rule 1: missing ya invalid ID
     students.forEach((s) => {
       const problem = checkApaarFormat(s);
       if (problem) {
@@ -25,6 +32,7 @@ router.post("/run", async (req, res) => {
       }
     });
 
+    // Rule 2: duplicate aur cross-institution
     findDuplicates(students).forEach((d) => {
       flags.push({
         studentId: d.student._id,
@@ -35,6 +43,9 @@ router.post("/run", async (req, res) => {
         severity: d.severity,
       });
     });
+
+    // Rule 3: intake se zyada admissions
+    checkIntake(students, programs).forEach((r) => flags.push(r));
 
     const saved = await Flag.insertMany(flags);
     res.json({
