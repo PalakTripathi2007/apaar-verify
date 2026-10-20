@@ -15,6 +15,7 @@ function Dashboard({ user, onLogout }) {
   const [flags, setFlags] = useState([]);
   const [students, setStudents] = useState([]);
   const [records, setRecords] = useState([]);
+  const [audit, setAudit] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -37,6 +38,15 @@ function Dashboard({ user, onLogout }) {
       setFlags(Array.isArray(flagsData) ? flagsData : []);
       setStudents(Array.isArray(studentsData) ? studentsData : []);
       setRecords(Array.isArray(recordsData) ? recordsData : []);
+                 if (isAdmin) {
+        try {
+          const auditRes = await apiFetch("/api/audit");
+          const auditData = await auditRes.json();
+          setAudit(Array.isArray(auditData) ? auditData : []);
+        } catch {
+          setAudit([]);
+        }
+      }
 
       if (!flagsRes.ok) {
         setMessage(flagsData.error || "Could not load flags");
@@ -327,6 +337,35 @@ function Dashboard({ user, onLogout }) {
           )}
         </>
       )}
+                {isAdmin && (
+            <>
+              <h2>Audit trail</h2>
+              {audit.length === 0 ? (
+                <p className="empty">No activity yet.</p>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>User</th>
+                      <th>Action</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {audit.map((a) => (
+                      <tr key={a._id}>
+                        <td>{new Date(a.createdAt).toLocaleString()}</td>
+                        <td>{a.actorEmail}</td>
+                        <td className="type">{a.action}</td>
+                        <td>{a.details}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </>
+          )}
     </div>
   );
 }

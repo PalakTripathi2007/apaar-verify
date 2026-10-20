@@ -1,3 +1,4 @@
+const { logAction } = require("../utils/audit");
 const express = require("express");
 const multer = require("multer");
 const Papa = require("papaparse");
@@ -68,6 +69,7 @@ router.post("/", upload.single("file"), async (req, res) => {
     });
 
     const saved = valid.length ? await Student.insertMany(valid) : [];
+    await logAction(req.user, "CSV_UPLOAD", `${saved.length} saved, ${rejected.length} rejected`);
 
     res.status(201).json({
       rowsInFile: parsed.data.length,

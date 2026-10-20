@@ -1,3 +1,4 @@
+const { logAction } = require("../utils/audit");
 const express = require("express");
 const Student = require("../models/Student");
 const { requireRole } = require("../middleware/auth");

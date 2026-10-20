@@ -1,3 +1,5 @@
+
+const { logAction } = require("../utils/audit");
 const express = require("express");
 const Student = require("../models/Student");
 const Flag = require("../models/Flag");
@@ -48,6 +50,7 @@ router.post("/run", async (req, res) => {
     checkIntake(students, programs).forEach((r) => flags.push(r));
 
     const saved = await Flag.insertMany(flags);
+        await logAction(req.user, "VALIDATION_RUN", `${students.length} students checked, ${saved.length} flags`);
     res.json({
       studentsChecked: students.length,
       flagsCreated: saved.length,

@@ -22,9 +22,14 @@ app.use(
   requireRole("aicte_admin"),
   require("./routes/programs")
 );
-app.use("/api/auth", require("./routes/auth"));
 app.use("/api/records", authenticate, require("./routes/records"));
 app.use("/api/verify", require("./routes/verify"));
+app.use(
+  "/api/audit",
+  authenticate,
+  requireRole("aicte_admin"),
+  require("./routes/audit")
+);
 
 mongoose
   .connect(process.env.MONGO_URI)

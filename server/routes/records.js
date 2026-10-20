@@ -1,3 +1,5 @@
+
+const { logAction } = require("../utils/audit");
 const express = require("express");
 const crypto = require("crypto");
 const QRCode = require("qrcode");
@@ -82,7 +84,7 @@ router.post(
         consent: { granted: true, updatedAt: new Date() },
         issuedBy: req.user.id,
       });
-
+      await logAction(req.user, "RECORD_ISSUED", `${student.fullName} (${verifyCode})`);
       const verifyUrl = `${process.env.FRONTEND_URL}/verify/${verifyCode}`;
       const qr = await QRCode.toDataURL(verifyUrl);
 
