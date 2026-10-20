@@ -49,7 +49,10 @@ router.post("/", upload.single("file"), async (req, res) => {
         isNri: toBool(row.isNri),
         ociStatus: toBool(row.ociStatus),
         isForeignNational: toBool(row.isForeignNational),
-        institutionCode: clean(row.institutionCode),
+                institutionCode:
+          req.user.role === "institution"
+            ? req.user.institutionCode
+            : clean(row.institutionCode),
         program: clean(row.program),
         academicYear: clean(row.academicYear),
       };

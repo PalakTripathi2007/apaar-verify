@@ -60,7 +60,11 @@ router.post("/run", async (req, res) => {
 
 // flags dekho
 router.get("/flags", async (req, res) => {
-  const flags = await Flag.find().sort({ createdAt: -1 });
+  const filter =
+    req.user.role === "institution"
+      ? { institutionCode: req.user.institutionCode }
+      : {};
+  const flags = await Flag.find(filter).sort({ createdAt: -1 });
   res.json(flags);
 });
 
