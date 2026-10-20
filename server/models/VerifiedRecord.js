@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 const recordSchema = new mongoose.Schema(
@@ -13,6 +14,10 @@ const recordSchema = new mongoose.Schema(
     },
     signature: { type: String, required: true },
     status: { type: String, enum: ["valid", "revoked"], default: "valid" },
+    consent: {
+      granted: { type: Boolean, default: false },
+      updatedAt: Date,
+    },
     issuedBy: String,
   },
   { timestamps: true }

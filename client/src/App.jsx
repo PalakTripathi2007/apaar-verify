@@ -14,24 +14,29 @@ function readUser() {
 function Dashboard({ user, onLogout }) {
   const [flags, setFlags] = useState([]);
   const [students, setStudents] = useState([]);
+  const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [issued, setIssued] = useState(null);
+  const [consentOk, setConsentOk] = useState(false);
 
   const isAdmin = user.role === "aicte_admin";
 
   async function loadData() {
     try {
-      const [flagsRes, studentsRes] = await Promise.all([
+      const [flagsRes, studentsRes, recordsRes] = await Promise.all([
         apiFetch("/api/validation/flags"),
         apiFetch("/api/students"),
+        apiFetch("/api/records"),
       ]);
       const flagsData = await flagsRes.json();
       const studentsData = await studentsRes.json();
+      const recordsData = await recordsRes.json();
 
       setFlags(Array.isArray(flagsData) ? flagsData : []);
       setStudents(Array.isArray(studentsData) ? studentsData : []);
+      setRecords(Array.isArray(recordsData) ? recordsData : []);
 
       if (!flagsRes.ok) {
         setMessage(flagsData.error || "Could not load flags");
@@ -85,14 +90,42 @@ function Dashboard({ user, onLogout }) {
   }
 
   async function handleIssue(id) {
+    if (!consentOk) {
+      setMessage("Please confirm that the student has given consent first.");
+      return;
+    }
     setBusy(true);
     setMessage("");
     setIssued(null);
     try {
-      const res = await apiFetch(`/api/records/issue/${id}`, { method: "POST" });
+      const res = await apiFetch(`/api/records/issue/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ consentGiven: true }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not issue record");
       setIssued(data);
+      await loadData();
+    } catch (err) {
+      setMessage(err.message);
+    }
+    setBusy(false);
+  }
+
+  async function handleConsent(code, granted) {
+    setBusy(true);
+    setMessage("");
+    try {
+      const res = await apiFetch(`/api/records/${code}/consent`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ granted }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not update consent");
+      await loadData();
+      setMessage(granted ? "Consent recorded." : "Consent withdrawn. Personal details are now hidden.");
     } catch (err) {
       setMessage(err.message);
     }
@@ -206,6 +239,14 @@ function Dashboard({ user, onLogout }) {
           )}
 
           <h2>Students</h2>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={consentOk}
+              onChange={(e) => setConsentOk(e.target.checked)}
+            />
+            I confirm the student has given consent to share this record
+          </label>
           {students.length === 0 ? (
             <p className="empty">No students yet.</p>
           ) : (
@@ -233,6 +274,50 @@ function Dashboard({ user, onLogout }) {
                         disabled={busy}
                       >
                         Issue record
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <h2>Issued records</h2>
+          {records.length === 0 ? (
+            <p className="empty">No records issued yet.</p>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>College</th>
+                  <th>Verify link</th>
+                  <th>Consent</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((r) => (
+                  <tr key={r.verifyCode}>
+                    <td>{r.fullName}</td>
+                    <td>{r.institutionCode}</td>
+                    <td>
+                      <a href={`/verify/${r.verifyCode}`} target="_blank" rel="noreferrer">
+                        {r.verifyCode}
+                      </a>
+                    </td>
+                    <td>
+                      <span className={`badge ${r.consentGranted ? "granted" : "withdrawn"}`}>
+                        {r.consentGranted ? "granted" : "withdrawn"}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className="btn small"
+                        onClick={() => handleConsent(r.verifyCode, !r.consentGranted)}
+                        disabled={busy}
+                      >
+                        {r.consentGranted ? "Withdraw consent" : "Record consent"}
                       </button>
                     </td>
                   </tr>

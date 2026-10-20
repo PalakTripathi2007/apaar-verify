@@ -15,16 +15,27 @@ router.get("/:code", async (req, res) => {
     if (!ok) return res.json({ result: "TAMPERED" });
     if (record.status === "revoked") return res.json({ result: "REVOKED" });
 
+    const consent = !!(record.consent && record.consent.granted);
+
+    // consent nahi hai to student ki personal jaankari bilkul nahi
+    const student = consent
+      ? {
+          name: maskName(s.fullName),
+          apaarId: maskId(s.apaarId),
+          institutionCode: s.institutionCode,
+          program: s.program,
+          academicYear: s.academicYear,
+        }
+      : {
+          institutionCode: s.institutionCode,
+          academicYear: s.academicYear,
+        };
+
     res.json({
       result: "VALID",
       issuedAt: record.createdAt,
-      student: {
-        name: maskName(s.fullName),
-        apaarId: maskId(s.apaarId),
-        institutionCode: s.institutionCode,
-        program: s.program,
-        academicYear: s.academicYear,
-      },
+      consent,
+      student,
     });
   } catch (err) {
     res.status(500).json({ error: "Verification failed" });

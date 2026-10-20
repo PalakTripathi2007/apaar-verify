@@ -260,3 +260,13 @@ h2 {
   font-size: 13px;
   text-align: center;
 }
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+
+.badge.granted { background: #d1fae5; color: #047857; }
+.badge.withdrawn { background: #e5e7eb; color: #4b5563; }

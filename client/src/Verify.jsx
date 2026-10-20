@@ -33,16 +33,20 @@ export default function Verify({ code }) {
 
         {s && (
           <dl>
-            <dt>Name</dt><dd>{s.name}</dd>
-            <dt>APAAR ID</dt><dd>{s.apaarId}</dd>
-            <dt>Institution</dt><dd>{s.institutionCode}</dd>
-            <dt>Programme</dt><dd>{s.program}</dd>
-            <dt>Academic year</dt><dd>{s.academicYear}</dd>
+            {s.name && (<><dt>Name</dt><dd>{s.name}</dd></>)}
+            {s.apaarId && (<><dt>APAAR ID</dt><dd>{s.apaarId}</dd></>)}
+            {s.institutionCode && (<><dt>Institution</dt><dd>{s.institutionCode}</dd></>)}
+            {s.program && (<><dt>Programme</dt><dd>{s.program}</dd></>)}
+            {s.academicYear && (<><dt>Academic year</dt><dd>{s.academicYear}</dd></>)}
             <dt>Issued on</dt><dd>{new Date(data.issuedAt).toLocaleDateString()}</dd>
           </dl>
         )}
+
+        {data.result === "VALID" && data.consent === false && (
+          <p className="foot">The student has not allowed personal details to be shown.</p>
+        )}
       </div>
-      <p className="foot">APAAR Verify. Personal details are partly hidden to protect privacy.</p>
+      <p className="foot">APAAR Verify. Personal details are shown only with the student's consent.</p>
     </div>
   );
 }
