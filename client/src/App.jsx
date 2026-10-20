@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Login from "./Login";
+import Verify from "./Verify";
 import { apiFetch } from "./api";
 
 function readUser() {
@@ -12,10 +13,11 @@ function readUser() {
 
 function Dashboard({ user, onLogout }) {
   const [flags, setFlags] = useState([]);
-  const [studentCount, setStudentCount] = useState(0);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [issued, setIssued] = useState(null);
 
   const isAdmin = user.role === "aicte_admin";
 
@@ -29,7 +31,7 @@ function Dashboard({ user, onLogout }) {
       const studentsData = await studentsRes.json();
 
       setFlags(Array.isArray(flagsData) ? flagsData : []);
-      setStudentCount(Array.isArray(studentsData) ? studentsData.length : 0);
+      setStudents(Array.isArray(studentsData) ? studentsData : []);
 
       if (!flagsRes.ok) {
         setMessage(flagsData.error || "Could not load flags");
@@ -77,7 +79,23 @@ function Dashboard({ user, onLogout }) {
     await apiFetch("/api/students", { method: "DELETE" });
     await apiFetch("/api/validation/run", { method: "POST" });
     await loadData();
+    setIssued(null);
     setMessage("Test data cleared.");
+    setBusy(false);
+  }
+
+  async function handleIssue(id) {
+    setBusy(true);
+    setMessage("");
+    setIssued(null);
+    try {
+      const res = await apiFetch(`/api/records/issue/${id}`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not issue record");
+      setIssued(data);
+    } catch (err) {
+      setMessage(err.message);
+    }
     setBusy(false);
   }
 
@@ -114,10 +132,28 @@ function Dashboard({ user, onLogout }) {
 
       {message && <div className="message">{message}</div>}
 
+      {issued && (
+        <div className="issued">
+          <img src={issued.qr} alt="QR code" width="160" height="160" />
+          <div>
+            <h3>Verified record issued</h3>
+            <p>Anyone can check this record using the link below.</p>
+            <a href={issued.verifyUrl} target="_blank" rel="noreferrer">
+              {issued.verifyUrl}
+            </a>
+            <div>
+              <button className="btn" onClick={() => setIssued(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <section className="cards">
         <div className="card">
           <span className="label">Students</span>
-          <span className="value">{studentCount}</span>
+          <span className="value">{students.length}</span>
         </div>
         <div className="card">
           <span className="label">Total flags</span>
@@ -139,37 +175,78 @@ function Dashboard({ user, onLogout }) {
 
       {loading ? (
         <p>Loading...</p>
-      ) : flags.length === 0 ? (
-        <p className="empty">No flags yet. Upload a CSV to start validation.</p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Type</th>
-              <th>Severity</th>
-              <th>College</th>
-              <th>Reason</th>
-            </tr>
-          </thead>
-          <tbody>
-            {flags.map((f) => (
-              <tr key={f._id}>
-                <td className="type">{f.flagType}</td>
-                <td>
-                  <span className={`badge ${f.severity}`}>{f.severity}</span>
-                </td>
-                <td>{f.institutionCode}</td>
-                <td>{f.reason}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <h2>Flags</h2>
+          {flags.length === 0 ? (
+            <p className="empty">No flags yet. Upload a CSV to start validation.</p>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Severity</th>
+                  <th>College</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {flags.map((f) => (
+                  <tr key={f._id}>
+                    <td className="type">{f.flagType}</td>
+                    <td>
+                      <span className={`badge ${f.severity}`}>{f.severity}</span>
+                    </td>
+                    <td>{f.institutionCode}</td>
+                    <td>{f.reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <h2>Students</h2>
+          {students.length === 0 ? (
+            <p className="empty">No students yet.</p>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>APAAR ID</th>
+                  <th>College</th>
+                  <th>Programme</th>
+                  <th>Record</th>
+                </tr>
+              </thead>
+              <tbody>
+                {students.map((s) => (
+                  <tr key={s._id}>
+                    <td>{s.fullName}</td>
+                    <td>{s.apaarId || "missing"}</td>
+                    <td>{s.institutionCode}</td>
+                    <td>{s.program}</td>
+                    <td>
+                      <button
+                        className="btn small"
+                        onClick={() => handleIssue(s._id)}
+                        disabled={busy}
+                      >
+                        Issue record
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </>
       )}
     </div>
   );
 }
 
-function App() {
+function AuthApp() {
   const [user, setUser] = useState(readUser());
 
   function handleLogout() {
@@ -180,6 +257,16 @@ function App() {
 
   if (!user) return <Login onLogin={setUser} />;
   return <Dashboard user={user} onLogout={handleLogout} />;
+}
+
+function App() {
+  const path = window.location.pathname;
+
+  // QR ka link: bina login ke chalta hai
+  if (path.startsWith("/verify/")) {
+    return <Verify code={path.split("/")[2]} />;
+  }
+  return <AuthApp />;
 }
 
 export default App;
