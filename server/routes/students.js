@@ -47,6 +47,7 @@ router.get("/", async (req, res) => {
 // sirf testing ke liye, aur sirf AICTE admin ke liye
 router.delete("/", requireRole("aicte_admin"), async (req, res) => {
   await Student.deleteMany({});
+    await logAction(req.user, "ALL_STUDENTS_DELETED", "Test data cleared");
   res.json({ message: "All students deleted" });
 });
 

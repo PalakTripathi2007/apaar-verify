@@ -110,6 +110,11 @@ router.patch("/:code/consent", async (req, res) => {
 
     record.consent = { granted: req.body.granted === true, updatedAt: new Date() };
     await record.save();
+        await logAction(
+      req.user,
+      record.consent.granted ? "CONSENT_GRANTED" : "CONSENT_WITHDRAWN",
+      `${record.snapshot.fullName} (${record.verifyCode})`
+    );
 
     res.json({ verifyCode: record.verifyCode, consentGranted: record.consent.granted });
   } catch (err) {
